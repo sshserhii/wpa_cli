@@ -30,10 +30,10 @@ int main(int argc, char *argv[])
 {
     int MasterSocket = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
     set<int> SlaveSockets;
-
+	
     struct sockaddr_in SockAddr;
     SockAddr.sin_family = AF_INET;
-    SockAddr.sin_port = htons(12345);
+    SockAddr.sin_port = htons(12344);
     SockAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     bind(MasterSocket,(struct sockaddr*)(&SockAddr),sizeof(SockAddr));
 
@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
     Set[0].fd = MasterSocket;
     Set[0].events = POLLIN;
     while(true){
+
         int index = 1;
         for(auto Iter = SlaveSockets.begin();Iter !=SlaveSockets.end();Iter++){
             Set[index].fd=*Iter;
@@ -58,22 +59,30 @@ int main(int argc, char *argv[])
                 if(i){
                     static char Buffer[1024];
                     int RecvSize = recv(Set[i].fd,Buffer,1024,MSG_NOSIGNAL);
+
+
                                         if((RecvSize==0) && (errno != EAGAIN)){
+
                         shutdown(Set[i].fd,SHUT_RDWR);
                         close(Set[i].fd);
                         SlaveSockets.erase(Set[i].fd);
                     }
                     else if(RecvSize > 0){
-                        send(Set[i].fd,Buffer,RecvSize,MSG_NOSIGNAL);
-                        for(int i=0;i<RecvSize;i++)
-                            cout<< Buffer[i];
-                    }
+
+
+                          send(Set[i].fd,Buffer,RecvSize,MSG_NOSIGNAL);
+                          cout<<Buffer<<endl;
+                        }
+
+
                 }
+
                 else{
                     int SlaveSocket = accept(MasterSocket,0,0);
                     set_nonblock(SlaveSocket);
                     SlaveSockets.insert(SlaveSocket);
                 }
+
             }
         }
 
